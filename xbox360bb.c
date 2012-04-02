@@ -56,6 +56,8 @@
  * - Changed it so that the directional buttons on the top button would act as
  *   send EV_ABS for the ABS_X and ABS_Y axises.  This allows Linux to detect
  *   the device as a joystick in joydev.c.
+ * - Build fix for kernel >= 2.6.34 due to function renames
+ *   ref: <https://issues.asterisk.org/print_bug_page.php?bug_id=17383>
  *
  */
 
@@ -421,7 +423,11 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 	/* Init the USB stuff */
 	xbox360bb->udev = udev;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
 	xbox360bb->raw_data = usb_buffer_alloc(udev, XBOX360BB_PKT_LEN, GFP_KERNEL, &xbox360bb->idata_dma);
+#else
+	xbox360bb->raw_data = usb_alloc_coherent(udev, XBOX360BB_PKT_LEN, GFP_KERNEL, &xbox360bb->idata_dma);
+#endif
 	if (!xbox360bb->raw_data)
 		goto fail2;
 
@@ -527,7 +533,11 @@ fail4:
 fail3:
 	usb_free_urb(xbox360bb->irq_in);
 fail2:
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
 	usb_buffer_free(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data, xbox360bb->idata_dma);
+#else
+	usb_free_coherent(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data, xbox360bb->idata_dma);
+#endif
 fail1:
 	return error;
 }
@@ -546,8 +556,13 @@ static void xbox360bb_usb_disconnect(struct usb_interface *intf)
 	input_unregister_device(xbox360bb->controller[3].idev);
 	/* FIXME: free the timers? */
 	usb_free_urb(xbox360bb->irq_in);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
 	usb_buffer_free(xbox360bb->udev, XBOX360BB_PKT_LEN,
 			xbox360bb->raw_data, xbox360bb->idata_dma);
+#else
+	usb_free_coherent(xbox360bb->udev, XBOX360BB_PKT_LEN,
+			xbox360bb->raw_data, xbox360bb->idata_dma);
+#endif
 	kfree(xbox360bb);
 }
 
