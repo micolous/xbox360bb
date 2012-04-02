@@ -64,6 +64,7 @@
 #include <linux/kernel.h>
 #include <linux/usb/input.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 #define DRIVER_AUTHOR "James Mastros <jam...@mastros.biz>"
 #define DRIVER_DESC "X-Box 360 big-buttons driver"
 
