@@ -1,9 +1,16 @@
 obj-m := xbox360bb.o
-KDIR := /lib/modules/$(shell uname -r)/build
+CURRENT := $(shell uname -r)
+KDIR := /lib/modules/$(CURRENT)/build
 PWD := $(shell pwd)
+MDIR := drivers/misc
+DEST := /lib/modules/$(CURRENT)/kernel/$(MDIR)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	
+install:
+	install -g0 -o0 xbox360bb.ko $(DEST)
+	/sbin/depmod -a
 
 clean:
 	rm -f modules.order Module.symvers 
