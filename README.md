@@ -21,24 +21,30 @@ When a receiver is attached to the computer, it will appear as four joystick dev
  * Microsoft X-Box 360 Big Button IR blue controller
  * Microsoft X-Box 360 Big Button IR yellow controller
 
+## Kernels supported ##
+
+This should build cleanly on 2.6.32 to 3.3.5.  It should build on later kernels too (but sometimes will need patching if things change).
+
+I've tested this module on `x86`, `amd64`, and `armhf`.
+
 ## Building and installing ##
 
 You should install the kernel headers on your system first.  If you have kernel sources for your running kernel, you can skip this.
 
 On Debian this is done with:
 
-    # apt-get install linux-headers-amd64 build-essential
+	# apt-get install linux-headers-amd64 build-essential
 
-Substitute `amd64` for your kernel's architecture.  This could be something like `i686` or `ppc`.
+Substitute `amd64` for your kernel's architecture.  This could be something like `i686` or `ppc`.  ARM systems typically have their machine name specified if they use a funny kernel.
 
 Then clone the git repository into `/usr/src`:
 
-    # cd /usr/src
+	# cd /usr/src
 	# git clone git://github.com/micolous/xbox360bb.git
 
 Then to build and install the module, run:
 
-    # cd /usr/src/xbox360bb
+	# cd /usr/src/xbox360bb
 	# make
 	# make install
 
@@ -46,7 +52,7 @@ Then to build and install the module, run:
 
 Once you have installed the module, you can activate it with:
 
-    # modprobe -v xbox360bb
+	# modprobe -v xbox360bb
 	
 If you want to automatically start the module on boot, you can add it to `/etc/modules`, or add the modprobe line to `/etc/rc.local`.
 
