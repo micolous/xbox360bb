@@ -74,5 +74,5 @@ You can also use VirtualBox on a Windows host with a Linux guest, sharing the US
 
 It may be possible to write a userspace driver for the controller in Windows based on `libusb`.  I'd imagine that `libusb` is similar to Linux's USB kernel interface, so porting it may be possible.  However this solution is far from ideal, and I haven't investigated this further.
 
-My suggestion: (tell Microsoft how you feel about this omission)[http://forums.create.msdn.com/forums/t/5485.aspx?PageIndex=1]. :)
+My suggestion: [tell Microsoft how you feel about this omission](http://forums.create.msdn.com/forums/t/5485.aspx?PageIndex=1). :)
 
