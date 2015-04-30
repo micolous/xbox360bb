@@ -4,7 +4,7 @@ A driver for the Xbox 360 Big Button (aka "Scene It") controllers / receiver.
 
 Copyright 2009 James Mastros <jam...@mastros.biz>
 
-Copyright 2011-2012 Michael Farrell <http://micolous.id.au>
+Copyright 2011-2012, 2015 Michael Farrell <http://micolous.id.au>
 
 Licensed under the GPLv2+.
 

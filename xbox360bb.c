@@ -28,7 +28,7 @@
  * been an obvious enhancement to the gameplay.)
  *
  * Copyright 2009 James Mastros <jam...@mastros.biz>
- * Copyright 2011-2012 Michael Farrell <http://micolous.id.au>
+ * Copyright 2011-2012, 2015 Michael Farrell <http://micolous.id.au>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
