@@ -7,7 +7,7 @@ DEST := /lib/modules/$(CURRENT)/kernel/$(MDIR)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
-	
+
 install:
 	install -g0 -o0 xbox360bb.ko $(DEST)
 	/sbin/depmod -a

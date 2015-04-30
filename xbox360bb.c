@@ -331,12 +331,12 @@ static void xbox360bb_usb_irq_in(struct urb *urb)
 	case -ENOENT:
 	case -ESHUTDOWN:
 		/* this urb is terminated, clean up */
-		dbg("%s - urb shutting down with status: %d",
-		    __func__, status);
+		printk(KERN_DEBUG "%s - urb shutting down with status: %d",
+		       __func__, status);
 		return;
 	default:
-		dbg("%s - nonzero urb status received: %d",
-		    __func__, status);
+		printk(KERN_DEBUG "%s - nonzero urb status received: %d",
+		       __func__, status);
 		goto exit;
 	}
 
@@ -345,8 +345,8 @@ static void xbox360bb_usb_irq_in(struct urb *urb)
 exit:
 	retval = usb_submit_urb(urb, GFP_ATOMIC);
 	if (retval)
-		err("%s - usb_submit_urb failed with result %d",
-		     __func__, retval);
+		printk(KERN_ERR "%s - usb_submit_urb failed with result %d",
+		       __func__, retval);
 }
 
 /* Input side device opened.  We'll never see two overlapping opens
