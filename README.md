@@ -53,7 +53,7 @@ Then to build and install the module, run:
 Once you have installed the module, you can activate it with:
 
 	# modprobe -v xbox360bb
-	
+
 If you want to automatically start the module on boot, you can add it to `/etc/modules`, or add the modprobe line to `/etc/rc.local`.
 
 ## Using the controller ##
@@ -62,17 +62,37 @@ You can use the controllers with any program on Linux that supports joysticks.
 
 You can use the `jstest` program to test the controllers, however be aware that the controller will show up with many buttons, so you will need to widen your terminal.  This is located in the `joystick` package on Debian.
 
-## Windows support ##
+## Other OS support ##
 
-I looked in to writing a Windows driver for this controller.  Unfortunately my lack of knowledge of Windows driver development meant that I found this too difficult, and I got nowhere with it.
+I'm not interested in porting this to non-Linux platforms.
 
-Unfortunately Windows driver developers very rarely release any source code for their drivers, and the Big Button receiver uses very a non-standard interface, using neither the Xbox 360 gamepad interface or USB HID.
+However, because I rank highly in Google Searches and get emails as a result, here are some pointers:
 
-There is some support for the controller in Microsoft's XNA game development toolkit from version 3, however it is only supported on the Xbox 360, not on Windows.
+### All platforms (using Linux virtualised) ###
 
-You can also use VirtualBox on a Windows host with a Linux guest, sharing the USB receiver to the guest (it's USB product/vendor ID is `045e:02a0`), then loading the `xbox360bb` kernel module in the Linux guest.
+You can also use VirtualBox (or other virtualisers) on a non-Linux host with a Linux guest, sharing the USB receiver to the guest (it's USB product/vendor ID is `045e:02a0`), then loading the `xbox360bb` kernel module in the Linux guest.
 
-It may be possible to write a userspace driver for the controller in Windows based on `libusb`.  I'd imagine that `libusb` is similar to Linux's USB kernel interface, so porting it may be possible.  However this solution is far from ideal, and I haven't investigated this further.
+Then you can write some script which runs in the Linux guest to send the joystick events from the Big Button over a TCP socket.
 
-My suggestion: [tell Microsoft how you feel about this omission](http://forums.create.msdn.com/forums/t/5485.aspx?PageIndex=1). :)
+### All platforms (using the "Jackbox approach") ###
+
+If you're making a quiz-type game using these controllers, you may wish to consider the [Jackbox Games](http://jackboxgames.com/) approach instead.
+
+When you start the game, put a URL on the screen where people can join your game with their smartphone's web browser.
+
+Then, allow people to use their phone to join the game, and have some AJAX or WebSockets and a little JavaScript to render elements on the phone for people to press on the fly, and fire events back to your game.
+
+### OSX support ###
+
+There's no driver for this.
+
+[There is an open source driver for the Xbox 360 gamepads](https://github.com/electric-monk/360Controller).  It needs some modifications to make this work.  Get hacking. :)
+
+### Windows support ###
+
+The Big Button receiver uses very a non-standard interface, using **neither** the Xbox 360 gamepad interface or USB HID.  The standard Microsoft Xbox controller drivers **will not work with this controller**.
+
+There is some support for the controller in [Microsoft's XNA Game Studio SDK](http://xbox.create.msdn.com/en-US/) version 3, however it is only supported on the Xbox 360, not on Windows.  Unlike the Windows SDK, you **also** require an XNA Creators Club paid subscription in order to deploy code to the Xbox 360.
+
+If you want to use a similar controller on Windows, sell your Big Button controller and buy a Playstation Buzz controller instead.  [There is an existing C# library for interfacing with the controllers](https://github.com/bbeardsley/BuzzIO), and they are of a similar form factor (although wired rather than IR), which you can use for quiz-show type games.
 
