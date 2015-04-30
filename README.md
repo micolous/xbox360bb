@@ -23,7 +23,7 @@ When a receiver is attached to the computer, it will appear as four joystick dev
 
 ## Kernels supported ##
 
-This should build cleanly on 2.6.32 to 3.3.5.  It should build on later kernels too (but sometimes will need patching if things change).
+This should build cleanly on Linux 2.6.32 to 3.16.  It should build on later kernels too (but sometimes will need patching if things change).
 
 I've tested this module on `x86`, `amd64`, and `armhf`.
 
@@ -40,7 +40,7 @@ Substitute `amd64` for your kernel's architecture.  This could be something like
 Then clone the git repository into `/usr/src`:
 
 	# cd /usr/src
-	# git clone git://github.com/micolous/xbox360bb.git
+	# git clone https://github.com/micolous/xbox360bb.git
 
 Then to build and install the module, run:
 
@@ -60,7 +60,7 @@ If you want to automatically start the module on boot, you can add it to `/etc/m
 
 You can use the controllers with any program on Linux that supports joysticks.
 
-You can use the `jstest` program to test the controllers, however be aware that the controller will show up with many buttons, so you will need to widen your terminal.
+You can use the `jstest` program to test the controllers, however be aware that the controller will show up with many buttons, so you will need to widen your terminal.  This is located in the `joystick` package on Debian.
 
 ## Windows support ##
 
