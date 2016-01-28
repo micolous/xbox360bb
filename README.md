@@ -52,13 +52,15 @@ Then clone the git repository into `/usr/src`:
 	# cd /usr/src
 	# git clone https://github.com/micolous/xbox360bb.git
 
+**Note:** you could clone the repository to another directory, however it is customary to push it to `/usr/src`.
+
+### Building and installing ###
+
 Then to build and install the module, run:
 
 	# cd /usr/src/xbox360bb
 	# make
 	# make install
-
-**Note:** you could clone the repository to another directory, however it is customary to push it to `/usr/src`.
 
 ## Loading the module ##
 
