@@ -4,7 +4,7 @@ A driver for the Xbox 360 Big Button (aka "Scene It") controllers / receiver.
 
 Copyright 2009 James Mastros <jam...@mastros.biz>
 
-Copyright 2011-2012, 2015 Michael Farrell <http://micolous.id.au>
+Copyright 2011-2016 Michael Farrell <http://micolous.id.au>
 
 Licensed under the GPLv2+.
 
@@ -12,7 +12,7 @@ Licensed under the GPLv2+.
 
  * `045e:02a0`: Microsoft Corporation Xbox360 Big Button IR
 
-**Note**: this will not give support for the controllers via LIRC, nor does the receiver act as a generic infrared receiver (CIR).  You can only use Xbox 360 Big Button controllers with it.
+**Note**: this will not give support for the controllers via LIRC, nor does the receiver act as a generic infrared receiver (CIR).  You can only use Xbox 360 Big Button controllers with it.  No other Xbox infrared accessories will function with the receiver.
 
 When a receiver is attached to the computer, it will appear as four joystick devices -- one for each colour controller:
 
@@ -23,19 +23,29 @@ When a receiver is attached to the computer, it will appear as four joystick dev
 
 ## Kernels supported ##
 
-This should build cleanly on Linux 2.6.32 to 3.16.  It should build on later kernels too (but sometimes will need patching if things change).
+This should build cleanly on Linux 2.6.32 to 4.2.  It should build on later kernels too (but sometimes will need patching if things change).
 
 I've tested this module on `x86`, `amd64`, and `armhf`.
 
 ## Building and installing ##
 
+### Installing kernel headers ###
+
 You should install the kernel headers on your system first.  If you have kernel sources for your running kernel, you can skip this.
 
-On Debian this is done with:
+On **Debian** this is done with:
 
 	# apt-get install linux-headers-amd64 build-essential
 
-Substitute `amd64` for your kernel's architecture.  This could be something like `i686` or `ppc`.  ARM systems typically have their machine name specified if they use a funny kernel.
+Substitute `amd64` for your kernel's architecture.  This could be something like `i686` or `ppc`.  ARM systems typically have their machine name specified as they rarely use a common kernel.
+
+On **Ubuntu** this is done with:
+
+	# apt-get install linux-headers-generic build-essential
+
+Substitute `generic` with the series of kernel you are using.  Normally this is `generic`, sometimes this is `generic-lts-wily` (if you use a backported kernel from Wily), or `lowlatency`.
+
+### Cloning the repository ###
 
 Then clone the git repository into `/usr/src`:
 
@@ -47,6 +57,8 @@ Then to build and install the module, run:
 	# cd /usr/src/xbox360bb
 	# make
 	# make install
+
+**Note:** you could clone the repository to another directory, however it is customary to push it to `/usr/src`.
 
 ## Loading the module ##
 
@@ -74,11 +86,13 @@ You can also use VirtualBox (or other virtualisers) on a non-Linux host with a L
 
 Then you can write some script which runs in the Linux guest to send the joystick events from the Big Button over a TCP socket.
 
+This isn't an elegant solution at all.
+
 ### All platforms (using the "Jackbox approach") ###
 
 If you're making a quiz-type game using these controllers, you may wish to consider the [Jackbox Games](http://jackboxgames.com/) approach instead.
 
-When you start the game, put a URL on the screen where people can join your game with their smartphone's web browser.
+When you start the game, put a URL (and QR code) on the screen where people can join your game with their smartphone's web browser.
 
 Then, allow people to use their phone to join the game, and have some AJAX or WebSockets and a little JavaScript to render elements on the phone for people to press on the fly, and fire events back to your game.
 
