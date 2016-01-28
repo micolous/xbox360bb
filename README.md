@@ -102,7 +102,7 @@ Then, allow people to use their phone to join the game, and have some AJAX or We
 
 There's no driver for this.
 
-[There is an open source driver for the Xbox 360 gamepads](https://github.com/electric-monk/360Controller).  It needs some modifications to make this work.  Get hacking. :)
+[There is an open source driver for the Xbox 360 gamepads](https://github.com/360Controller/360Controller).  It needs some modifications to make this work.  Get hacking. :)
 
 ### Windows support ###
 
