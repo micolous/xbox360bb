@@ -65,6 +65,7 @@
  * - Improved code style
  *
  */
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/kernel.h>
 #include <linux/usb/input.h>
@@ -72,7 +73,6 @@
 #include <linux/version.h>
 #include <linux/export.h>
 #include <linux/module.h>
-
 
 #define DRIVER_DESC "X-Box 360 Big Button (Scene It) driver"
 
