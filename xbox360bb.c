@@ -335,11 +335,11 @@ static void xbox360bb_usb_irq_in(struct urb *urb)
 	case -ESHUTDOWN:
 		/* this urb is terminated, clean up */
 		pr_debug("%s - urb shutting down with status: %d",
-		       __func__, status);
+			 __func__, status);
 		return;
 	default:
 		pr_debug("%s - nonzero urb status received: %d",
-		       __func__, status);
+			 __func__, status);
 		goto exit;
 	}
 
@@ -415,9 +415,8 @@ static int xbox360bb_usb_probe(struct usb_interface *intf,
 	int error = -ENOMEM;
 
 	pr_info("xbox360bb_usb_probe vendor=0x%x, product=0x%x\n",
-	       le16_to_cpu(udev->descriptor.idVendor),
-	       le16_to_cpu(udev->descriptor.idProduct)
-		);
+		le16_to_cpu(udev->descriptor.idVendor),
+		le16_to_cpu(udev->descriptor.idProduct));
 
 	/* Find the xbox360bb_device entry for this one.  (FIXME:
 	   Should we get rid of this?  We only have one, presently,
