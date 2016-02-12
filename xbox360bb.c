@@ -70,15 +70,11 @@
 #include <linux/usb/input.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
 #include <linux/export.h>
-#endif
 #include <linux/module.h>
 
 
 #define DRIVER_DESC "X-Box 360 Big Button (Scene It) driver"
-
-#define DPRINTK(fmt, ...)
 
 /* No idea where this came from, it's copped from xpad.c */
 #define XBOX360BB_PKT_LEN 32
@@ -151,11 +147,6 @@ static const signed short xbox360bb_btn[] = {
 #define XBOX360BB_VENDOR(vend) \
 	{ XBOX360BB_VENDOR_PROTOCOL(vend, 4) }
 
-static struct usb_device_id xbox360bb_usb_table[] = {
-	XBOX360BB_VENDOR(0x045e),	/* Microsoft X-Box 360 controllers */
-	{}
-};
-
 static const char * const xbox360bb_controller_colors[] = {
 	" green controller",
 	" red controller",
@@ -164,7 +155,7 @@ static const char * const xbox360bb_controller_colors[] = {
 };
 
 
-MODULE_DEVICE_TABLE(usb, xbox360bb_usb_table);
+
 
 /* Circular dependency */
 struct xbox360bb;
@@ -277,8 +268,8 @@ static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd,
 	}
 	controller = &(xbox360bb->controller[data[2]]);
 
-	DPRINTK("xbox360bb: %d ms currently remaining on timer\n",
-		jiffies_to_msecs(controller->timer_keyup.expires-jiffies));
+	pr_debug("%d ms currently remaining on timer\n",
+		 jiffies_to_msecs(controller->timer_keyup.expires-jiffies));
 
 	/* Arm the timer (or move it forward).  In a quick test, 188
 	 * ms is longest between two reports.  250 should give us
@@ -290,7 +281,7 @@ static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd,
 	 * mostly. */
 	if (controller->last_report[0] == data[3] &&
 	    controller->last_report[1] == data[4]) {
-		DPRINTK("xbox360bb: Ignoring duplicate report\n");
+		pr_debug("Ignoring duplicate report\n");
 		return;
 	}
 	controller->last_report[0] = data[3];
@@ -372,15 +363,15 @@ static int xbox360bb_input_open(struct input_dev *idev)
 	int error;
 
 	if (xbox360bb->idev_open_count == 0) {
-		DPRINTK("In open, submitting URB\n");
+		pr_debug("In open, submitting URB\n");
 		error = usb_submit_urb(xbox360bb->irq_in, GFP_KERNEL);
 		if (error) {
 			pr_warn("...error = %d\n", error);
 			return -EIO;
 		}
-		DPRINTK("...passed\n");
+		pr_debug("...passed\n");
 	} else {
-		DPRINTK("Not trying to submit URB; it should already be running (idev_open_count=%d)\n",
+		pr_debug("Not trying to submit URB; it should already be running (idev_open_count=%d)\n",
 			xbox360bb->idev_open_count);
 	}
 	xbox360bb->idev_open_count++;
@@ -397,11 +388,11 @@ static void xbox360bb_input_close(struct input_dev *idev)
 	struct xbox360bb *xbox360bb = controller->receiver;
 
 	if (xbox360bb->idev_open_count == 1) {
-		DPRINTK("In close, killing urb\n");
+		pr_debug("In close, killing urb\n");
 		usb_kill_urb(xbox360bb->irq_in);
 	} else {
-		DPRINTK("In close, not killing urb, open count=%d\n",
-			xbox360bb->idev_open_count);
+		pr_debug("In close, not killing urb, open count=%d\n",
+			 xbox360bb->idev_open_count);
 	}
 	xbox360bb->idev_open_count--;
 	if (xbox360bb->idev_open_count < 0)
@@ -449,15 +440,10 @@ static int xbox360bb_usb_probe(struct usb_interface *intf,
 	/* Init the USB stuff */
 	xbox360bb->udev = udev;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
-	xbox360bb->raw_data = usb_buffer_alloc(udev, XBOX360BB_PKT_LEN,
-					       GFP_KERNEL,
-					       &xbox360bb->idata_dma);
-#else
 	xbox360bb->raw_data = usb_alloc_coherent(udev, XBOX360BB_PKT_LEN,
 						 GFP_KERNEL,
 						 &xbox360bb->idata_dma);
-#endif
+
 	if (!xbox360bb->raw_data)
 		goto fail2;
 
@@ -571,13 +557,8 @@ fail4:
 fail3:
 	usb_free_urb(xbox360bb->irq_in);
 fail2:
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
-	usb_buffer_free(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data,
-		xbox360bb->idata_dma);
-#else
 	usb_free_coherent(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data,
 		xbox360bb->idata_dma);
-#endif
 fail1:
 	return error;
 }
@@ -596,15 +577,17 @@ static void xbox360bb_usb_disconnect(struct usb_interface *intf)
 	input_unregister_device(xbox360bb->controller[3].idev);
 	/* FIXME: free the timers? */
 	usb_free_urb(xbox360bb->irq_in);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
-	usb_buffer_free(xbox360bb->udev, XBOX360BB_PKT_LEN,
-			xbox360bb->raw_data, xbox360bb->idata_dma);
-#else
 	usb_free_coherent(xbox360bb->udev, XBOX360BB_PKT_LEN,
 			xbox360bb->raw_data, xbox360bb->idata_dma);
-#endif
 	kfree(xbox360bb);
 }
+
+static struct usb_device_id xbox360bb_usb_table[] = {
+	XBOX360BB_VENDOR(0x045e),	/* Microsoft X-Box 360 controllers */
+	{}
+};
+
+MODULE_DEVICE_TABLE(usb, xbox360bb_usb_table);
 
 static struct usb_driver xbox360bb_usb_driver = {
 	.name       = "xbox360bb",
