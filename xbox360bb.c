@@ -45,20 +45,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  * This driver is based on:
- *  - the xpad driver -- general input & usb, some xbox --drivers/input/joystick/xpad.c
- *  - winbond-cir -- repeat handling -- drivers/input/misc/winbond-cir.c
+ *  - the xpad driver -- general input & usb, some xbox
+ *                    -- drivers/input/joystick/xpad.c
+ *  - winbond-cir -- repeat handling
+ *                -- drivers/input/misc/winbond-cir.c
  *
  * TODO:
  *  - smarter support for repeat.
  *  - Become certain of the correct keycode for the centre button.
  *
  * This is a MODIFIED version of the driver by Michael Farrell
- * <http://micolous.id.au/>:
+ * <micolous+lk@gmail.com>:
  * - Changed it so that the directional buttons on the top button would act as
  *   send EV_ABS for the ABS_X and ABS_Y axises.  This allows Linux to detect
  *   the device as a joystick in joydev.c.
  * - Build fix for kernel >= 2.6.34 due to function renames
  *   ref: <https://issues.asterisk.org/print_bug_page.php?bug_id=17383>
+ * - Build fix for kernel >= 3.2.0 due to module handling differences
+ * - Improved code style
  *
  */
 
@@ -66,14 +70,13 @@
 #include <linux/usb/input.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
 #include <linux/export.h>
 #endif
 #include <linux/module.h>
 
 
-#define DRIVER_AUTHOR "James Mastros <jam...@mastros.biz>"
-#define DRIVER_DESC "X-Box 360 big-buttons driver"
+#define DRIVER_DESC "X-Box 360 Big Button (Scene It) driver"
 
 #define DPRINTK(fmt, ...)
 
@@ -104,12 +107,11 @@ static const signed short xbox360bb_btn[] = {
 	/* 0x80 and 0x40 are unused */
 	BTN_BACK,   /* 0x20 */
 	BTN_START,  /* 0x10 */
-//	BTN_RIGHT,  /* 0x08 */
-//	BTN_LEFT,   /* 0x04 */
-	/* No good names for "up" and "down" buttons, use the same as
-	 * xpad. */
-//	BTN_1,      /* 0x02 */
-//	BTN_0,      /* 0x01 */
+	/* Right       0x08 */
+	/* Left        0x04 */
+	/* Down        0x02 */
+	/* Up          0x01 */
+
 	/* Byte 3 (zero-based) of report, MSB to LSB */
 	BTN_Y,      /* 0x80 */
 	BTN_X,      /* 0x40 */
@@ -140,7 +142,8 @@ static const signed short xbox360bb_btn[] = {
  * have protocol 4.
  */
 #define XBOX360BB_VENDOR_PROTOCOL(vend, pr) \
-	.match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_INT_INFO, \
+	.match_flags = USB_DEVICE_ID_MATCH_VENDOR | \
+		       USB_DEVICE_ID_MATCH_INT_INFO, \
 	.idVendor = (vend), \
 	.bInterfaceClass = USB_CLASS_VENDOR_SPEC, \
 	.bInterfaceSubClass = 93, \
@@ -152,6 +155,14 @@ static struct usb_device_id xbox360bb_usb_table[] = {
 	XBOX360BB_VENDOR(0x045e),	/* Microsoft X-Box 360 controllers */
 	{}
 };
+
+static const char * const xbox360bb_controller_colors[] = {
+	" green controller",
+	" red controller",
+	" blue controller",
+	" yellow controller"
+};
+
 
 MODULE_DEVICE_TABLE(usb, xbox360bb_usb_table);
 
@@ -201,7 +212,8 @@ struct xbox360bb {
  *
  *
  */
-static void xbox360bb_keydown(struct xbox360bb_controller *controller, int button, int val)
+static void xbox360bb_keydown(struct xbox360bb_controller *controller,
+			      int button, int val)
 {
 	input_report_key(controller->idev, button, val);
 }
@@ -215,16 +227,18 @@ static void xbox360bb_keydown(struct xbox360bb_controller *controller, int butto
 static void xbox360bb_keyup(unsigned long user_data)
 {
 	int i;
-	struct xbox360bb_controller *controller = (struct xbox360bb_controller *)user_data;
+	struct xbox360bb_controller *controller =
+		(struct xbox360bb_controller *)user_data;
 
-	printk(KERN_INFO "xbox360bb: timer callback for controller %d\n", controller->controller_number);
+	pr_info("timer callback for controller %d\n",
+		controller->controller_number);
 
 	/* FIXME: Is there a quick, simple way to keyup all currently
 	 * down keys at once? */
 	for (i = 0; xbox360bb_btn[i] >= 0; i++)
 		input_report_key(controller->idev, xbox360bb_btn[i], 0);
-	
-	// also reset X and Y axis
+
+	/* Also reset the X and Y axis */
 	for (i = 0; xbox360bb_abs[i] >= 0; i++)
 		input_report_abs(controller->idev, xbox360bb_abs[i], 0);
 
@@ -239,7 +253,8 @@ static void xbox360bb_keyup(unsigned long user_data)
  * Given the actual payload of a packet, make it into events.  This is
  * the actual core of this module; everything else is plumbing.
  */
-static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd, unsigned char* data)
+static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd,
+					 unsigned char *data)
 {
 	/* Byte 2 of the input is what controller we've got, zero
 	 * based: green, red, blue, yellow. */
@@ -248,7 +263,8 @@ static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd, u
 	signed int y = 0;
 
 	if (data[2] > 3) {
-		printk(KERN_WARNING "Argh, xbox360bb controller number out of range: %d", data[2]);
+		pr_warn("Argh, xbox360bb controller number out of range: %d",
+			data[2]);
 		/* Should we stop processing completely, rather then
 		just this report?  Depends on how severe the error is,
 		and I currently have no way of telling.  There's
@@ -261,7 +277,8 @@ static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd, u
 	}
 	controller = &(xbox360bb->controller[data[2]]);
 
-	DPRINTK("xbox360bb: %d ms currently remaining on timer\n", jiffies_to_msecs(controller->timer_keyup.expires-jiffies));
+	DPRINTK("xbox360bb: %d ms currently remaining on timer\n",
+		jiffies_to_msecs(controller->timer_keyup.expires-jiffies));
 
 	/* Arm the timer (or move it forward).  In a quick test, 188
 	 * ms is longest between two reports.  250 should give us
@@ -279,12 +296,7 @@ static void xbox360bb_usb_process_packet(struct xbox360bb *xbox360bb, u16 cmd, u
 	controller->last_report[0] = data[3];
 	controller->last_report[1] = data[4];
 
-	/* dpad as four buttons... */
-	//xbox360bb_keydown(controller, BTN_0,      data[3] & 0x01); /* up */
-	//xbox360bb_keydown(controller, BTN_1,      data[3] & 0x02); /* down */
-	//xbox360bb_keydown(controller, BTN_LEFT,   data[3] & 0x04);
-	//xbox360bb_keydown(controller, BTN_RIGHT,  data[3] & 0x08);
-	
+	/* dpad as absolute axis... */
 	y = (data[3] & 0x01) ? -1  : y;
 	y = (data[3] & 0x02) ? 1 : y;
 	x = (data[3] & 0x04) ? -1  : x;
@@ -331,11 +343,11 @@ static void xbox360bb_usb_irq_in(struct urb *urb)
 	case -ENOENT:
 	case -ESHUTDOWN:
 		/* this urb is terminated, clean up */
-		printk(KERN_DEBUG "%s - urb shutting down with status: %d",
+		pr_debug("%s - urb shutting down with status: %d",
 		       __func__, status);
 		return;
 	default:
-		printk(KERN_DEBUG "%s - nonzero urb status received: %d",
+		pr_debug("%s - nonzero urb status received: %d",
 		       __func__, status);
 		goto exit;
 	}
@@ -345,7 +357,7 @@ static void xbox360bb_usb_irq_in(struct urb *urb)
 exit:
 	retval = usb_submit_urb(urb, GFP_ATOMIC);
 	if (retval)
-		printk(KERN_ERR "%s - usb_submit_urb failed with result %d",
+		pr_err("%s - usb_submit_urb failed with result %d",
 		       __func__, retval);
 }
 
@@ -363,16 +375,18 @@ static int xbox360bb_input_open(struct input_dev *idev)
 		DPRINTK("In open, submitting URB\n");
 		error = usb_submit_urb(xbox360bb->irq_in, GFP_KERNEL);
 		if (error) {
-			printk(KERN_WARNING "xbox360bb: ...error = %d\n", error);
+			pr_warn("...error = %d\n", error);
 			return -EIO;
 		}
 		DPRINTK("...passed\n");
 	} else {
-		DPRINTK("Not trying to submit URB; it should already be running (idev_open_count=%d)\n", xbox360bb->idev_open_count);
+		DPRINTK("Not trying to submit URB; it should already be running (idev_open_count=%d)\n",
+			xbox360bb->idev_open_count);
 	}
 	xbox360bb->idev_open_count++;
 	if (xbox360bb->idev_open_count > 4)
-		printk(KERN_WARNING "xbox360bb: WTF, idev_open_count=%d is out of range after open\n", xbox360bb->idev_open_count);
+		pr_warn("idev_open_count=%d is out of range after open\n",
+			xbox360bb->idev_open_count);
 
 	return 0;
 }
@@ -386,31 +400,30 @@ static void xbox360bb_input_close(struct input_dev *idev)
 		DPRINTK("In close, killing urb\n");
 		usb_kill_urb(xbox360bb->irq_in);
 	} else {
-		DPRINTK("In close, not killing urb, open count=%d\n", xbox360bb->idev_open_count);
+		DPRINTK("In close, not killing urb, open count=%d\n",
+			xbox360bb->idev_open_count);
 	}
 	xbox360bb->idev_open_count--;
 	if (xbox360bb->idev_open_count < 0)
-		printk(KERN_WARNING "xbox360bb: Argh, idev_open_count less then 0: %d\n", xbox360bb->idev_open_count);
+		pr_warn("Argh, idev_open_count less then 0: %d\n",
+			xbox360bb->idev_open_count);
 }
 
-static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
+static int xbox360bb_usb_probe(struct usb_interface *intf,
+			       const struct usb_device_id *id)
 {
 	struct usb_device *udev = interface_to_usbdev(intf);
 	struct xbox360bb *xbox360bb;
 	struct input_dev *input_dev;
 	struct usb_endpoint_descriptor *ep_irq_in;
 	const struct xbox360bb_dev_options *dev_options = NULL;
-	char *controller_colors[] = {" green controller",
-				     " red controller",
-				     " blue controller",
-				     " yellow controller"};
 
 	int options_i;
 	int controller_i;
 	int btn_i, abs_i;
 	int error = -ENOMEM;
 
-	printk(KERN_INFO "xbox360bb_usb_probe vendor=0x%x, product=0x%x\n",
+	pr_info("xbox360bb_usb_probe vendor=0x%x, product=0x%x\n",
 	       le16_to_cpu(udev->descriptor.idVendor),
 	       le16_to_cpu(udev->descriptor.idProduct)
 		);
@@ -418,10 +431,14 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 	/* Find the xbox360bb_device entry for this one.  (FIXME:
 	   Should we get rid of this?  We only have one, presently,
 	   and no options we need to look up in here anyway.) */
-	for (options_i = 0; xbox360bb_dev_options[options_i].idVendor; options_i++) {
+	for (options_i = 0;
+	     xbox360bb_dev_options[options_i].idVendor;
+	     options_i++) {
 		dev_options = &xbox360bb_dev_options[options_i];
-		if ((le16_to_cpu(udev->descriptor.idVendor) == dev_options->idVendor) &&
-		    (le16_to_cpu(udev->descriptor.idProduct) == dev_options->idProduct))
+		if ((le16_to_cpu(udev->descriptor.idVendor) ==
+		     dev_options->idVendor) &&
+		    (le16_to_cpu(udev->descriptor.idProduct) ==
+		     dev_options->idProduct))
 			break;
 	}
 
@@ -432,10 +449,14 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 	/* Init the USB stuff */
 	xbox360bb->udev = udev;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
-	xbox360bb->raw_data = usb_buffer_alloc(udev, XBOX360BB_PKT_LEN, GFP_KERNEL, &xbox360bb->idata_dma);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
+	xbox360bb->raw_data = usb_buffer_alloc(udev, XBOX360BB_PKT_LEN,
+					       GFP_KERNEL,
+					       &xbox360bb->idata_dma);
 #else
-	xbox360bb->raw_data = usb_alloc_coherent(udev, XBOX360BB_PKT_LEN, GFP_KERNEL, &xbox360bb->idata_dma);
+	xbox360bb->raw_data = usb_alloc_coherent(udev, XBOX360BB_PKT_LEN,
+						 GFP_KERNEL,
+						 &xbox360bb->idata_dma);
 #endif
 	if (!xbox360bb->raw_data)
 		goto fail2;
@@ -447,7 +468,8 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 	ep_irq_in = &intf->cur_altsetting->endpoint[0].desc;
 	usb_fill_int_urb(xbox360bb->irq_in, udev,
 			 usb_rcvintpipe(udev, ep_irq_in->bEndpointAddress),
-			 xbox360bb->raw_data, XBOX360BB_PKT_LEN, xbox360bb_usb_irq_in,
+			 xbox360bb->raw_data, XBOX360BB_PKT_LEN,
+			 xbox360bb_usb_irq_in,
 			 xbox360bb, ep_irq_in->bInterval);
 	xbox360bb->irq_in->transfer_dma = xbox360bb->idata_dma;
 	xbox360bb->irq_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
@@ -462,21 +484,25 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 		 * to warn all over, or use a temporary.  */
 		char *name;
 		char *phys;
-		struct xbox360bb_controller *controller =&(xbox360bb->controller[controller_i]);
+		struct xbox360bb_controller *controller =
+			&(xbox360bb->controller[controller_i]);
 
-		printk(KERN_INFO "xbox360bb: making input dev %d\n", controller_i);
+		pr_info("making input dev %d\n", controller_i);
 
 		controller->controller_number = controller_i;
 		controller->receiver = xbox360bb;
 
-		setup_timer(&(controller->timer_keyup), xbox360bb_keyup, (unsigned long)controller);
+		setup_timer(&(controller->timer_keyup), xbox360bb_keyup,
+			    (unsigned long)controller);
 
 		input_dev = input_allocate_device();
 		if (!input_dev)
 			goto fail4;
 		controller->idev = input_dev;
 
-		name_size = strlen(dev_options->name) + strlen(controller_colors[controller_i]) + 1;
+		name_size = strlen(dev_options->name) +
+			    strlen(xbox360bb_controller_colors[controller_i]) +
+			    1;
 		name = kzalloc(name_size, GFP_KERNEL);
 		if (!name)
 			goto fail4;
@@ -486,9 +512,10 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 		 * will happen with str*l*(cpy|cat) is truncation.
 		 */
 		strlcpy(name, dev_options->name, name_size);
-		strlcat(name, controller_colors[controller_i], name_size);
+		strlcat(name, xbox360bb_controller_colors[controller_i],
+			name_size);
 
-		printk(KERN_INFO "xbox360bb: ... name='%s'\n", name);
+		pr_info("... name='%s'\n", name);
 		input_dev->name = name;
 
 		/* Right, now need to do the same with phys, more or less. */
@@ -498,12 +525,12 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 			goto fail4;
 		usb_make_path(udev, phys, 64);
 		snprintf(phys, 64, "%s/input%d", phys, controller_i);
-		printk(KERN_INFO "xbox360bb: ... phys='%s'\n", phys);
+		pr_info("... phys='%s'\n", phys);
 		input_dev->phys = phys;
 
 		/* Static data */
 		input_dev->dev.parent = &intf->dev;
-		printk(KERN_INFO "xbox360bb: ... input_set_drvdata\n");
+		pr_info("... input_set_drvdata\n");
 		input_set_drvdata(input_dev, controller);
 		/* Set the input device vendor/product/version from
 		   the usb ones. */
@@ -517,16 +544,18 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 		input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
 		for (btn_i = 0; xbox360bb_btn[btn_i] >= 0; btn_i++)
 			set_bit(xbox360bb_btn[btn_i], input_dev->keybit);
-			
+
 		for (abs_i = 0; xbox360bb_abs[abs_i] >= 0; abs_i++) {
 			set_bit(xbox360bb_abs[abs_i], input_dev->absbit);
-			input_set_abs_params(input_dev, xbox360bb_abs[abs_i], -1, 1, 0, 0);
+			input_set_abs_params(input_dev, xbox360bb_abs[abs_i],
+					     -1, 1, 0, 0);
 		}
 
-
-		printk(KERN_INFO "xbox360bb: ... input_register_device\n");
+		pr_info("... input_register_device\n");
 		error = input_register_device(input_dev);
-		printk(KERN_INFO "xbox360bb: returned from input_register_device, error=%d\n", error);
+		pr_info("returned from input_register_device, error=%d\n",
+			error);
+
 		if (error)
 			goto fail4;
 	}
@@ -536,16 +565,18 @@ static int xbox360bb_usb_probe(struct usb_interface *intf, const struct usb_devi
 	/* FIXME: We currently leak in failure cases numbered above
 	 * fail3. */
 fail4:
-	printk(KERN_WARNING "xbox360bb: Aaargh, hit fail4!\n");
+	pr_warn("Aaargh, hit fail4!\n");
 	/* need to check which bits of the input stuff have been
 	 * allocated, because it's all loopy. */
 fail3:
 	usb_free_urb(xbox360bb->irq_in);
 fail2:
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
-	usb_buffer_free(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data, xbox360bb->idata_dma);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
+	usb_buffer_free(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data,
+		xbox360bb->idata_dma);
 #else
-	usb_free_coherent(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data, xbox360bb->idata_dma);
+	usb_free_coherent(udev, XBOX360BB_PKT_LEN, xbox360bb->raw_data,
+		xbox360bb->idata_dma);
 #endif
 fail1:
 	return error;
@@ -565,7 +596,7 @@ static void xbox360bb_usb_disconnect(struct usb_interface *intf)
 	input_unregister_device(xbox360bb->controller[3].idev);
 	/* FIXME: free the timers? */
 	usb_free_urb(xbox360bb->irq_in);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,34)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
 	usb_buffer_free(xbox360bb->udev, XBOX360BB_PKT_LEN,
 			xbox360bb->raw_data, xbox360bb->idata_dma);
 #else
@@ -585,8 +616,10 @@ static struct usb_driver xbox360bb_usb_driver = {
 static int __init xbox360bb_usb_init(void)
 {
 	int result = usb_register(&xbox360bb_usb_driver);
+
 	if (result == 0)
-		printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_DESC "\n");
+		pr_info(DRIVER_DESC "\n");
+
 	return result;
 }
 
@@ -598,6 +631,7 @@ static void __exit xbox360bb_usb_exit(void)
 module_init(xbox360bb_usb_init);
 module_exit(xbox360bb_usb_exit);
 
-MODULE_AUTHOR(DRIVER_AUTHOR);
+MODULE_AUTHOR("Michael Farrell <micolous+lk@gmail.com>");
+MODULE_AUTHOR("James Mastros <jam...@mastros.biz>");
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
