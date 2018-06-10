@@ -215,11 +215,11 @@ static void xbox360bb_keydown(struct xbox360bb_controller *controller,
  * we haven't had a report at all for this controller in some time, so
  * we should consider *all* keys that it had down as up.
  */
-static void xbox360bb_keyup(unsigned long user_data)
+static void xbox360bb_keyup(struct timer_list * t)
 {
 	int i;
 	struct xbox360bb_controller *controller =
-		(struct xbox360bb_controller *)user_data;
+		(struct xbox360bb_controller *)from_timer(controller, t, timer_keyup);
 
 	pr_info("timer callback for controller %d\n",
 		controller->controller_number);
@@ -477,8 +477,7 @@ static int xbox360bb_usb_probe(struct usb_interface *intf,
 		controller->controller_number = controller_i;
 		controller->receiver = xbox360bb;
 
-		setup_timer(&(controller->timer_keyup), xbox360bb_keyup,
-			    (unsigned long)controller);
+		timer_setup(&(controller->timer_keyup), xbox360bb_keyup, 0);
 
 		input_dev = input_allocate_device();
 		if (!input_dev)
