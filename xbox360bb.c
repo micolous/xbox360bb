@@ -215,12 +215,19 @@ static void xbox360bb_keydown(struct xbox360bb_controller *controller,
  * we haven't had a report at all for this controller in some time, so
  * we should consider *all* keys that it had down as up.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+static void xbox360bb_keyup(struct timer_list * t)
+{
+	int i;
+	struct xbox360bb_controller *controller =
+		(struct xbox360bb_controller *)from_timer(controller, t, timer_keyup);
+#else
 static void xbox360bb_keyup(unsigned long user_data)
 {
 	int i;
 	struct xbox360bb_controller *controller =
 		(struct xbox360bb_controller *)user_data;
-
+#endif
 	pr_info("timer callback for controller %d\n",
 		controller->controller_number);
 
@@ -477,8 +484,12 @@ static int xbox360bb_usb_probe(struct usb_interface *intf,
 		controller->controller_number = controller_i;
 		controller->receiver = xbox360bb;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+		timer_setup(&(controller->timer_keyup), xbox360bb_keyup, 0);
+#else
 		setup_timer(&(controller->timer_keyup), xbox360bb_keyup,
-			    (unsigned long)controller);
+			 (unsigned long)controller);
+#endif
 
 		input_dev = input_allocate_device();
 		if (!input_dev)
