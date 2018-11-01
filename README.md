@@ -23,7 +23,7 @@ When a receiver is attached to the computer, it will appear as four joystick dev
 
 ## Kernels supported ##
 
-This should build cleanly on Linux 3.2.0 to 4.2.  It should build on later kernels too (but sometimes will need patching if things change).
+This should build cleanly on Linux 3.2.0 to 4.16.  It should build on later kernels too (but sometimes will need patching if things change).
 
 If you want compatibility with kernels as early as Linux 2.6.32, please check out the `2.6.32-compat` tag from the [source repository](https://github.com/micolous/xbox360bb).  This really isn't recommended.
 
