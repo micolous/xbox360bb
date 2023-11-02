@@ -6,7 +6,7 @@ MDIR := drivers/misc
 DEST := /lib/modules/$(CURRENT)/kernel/$(MDIR)
 
 default:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 install:
 	install -g0 -o0 xbox360bb.ko $(DEST)
