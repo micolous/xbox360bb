@@ -31,23 +31,59 @@ I've tested this module on `x86`, `amd64`, and `armhf`.
 
 ## Building and installing ##
 
-### Installing kernel headers ###
+You'll need to run all these commands as `root`.
 
-You should install the kernel headers on your system first.  If you have kernel sources for your running kernel, you can skip this.
+If you're on a system using `sudo` (like **Raspbian** or **Ubuntu**), run
+`sudo -i` first to become `root`.
 
-On **Debian** this is done with:
+The `bash` prompt changes from a `$` to `#` when you run as `root`:
 
-	# apt-get install linux-headers-amd64 build-essential
+```
+user@pc:~$ sudo -i
+[sudo] password for user: (hidden)
+root@pc:~#
+```
 
-Substitute `amd64` for your kernel's architecture.  This could be something like `i686` or `ppc`.  ARM systems typically have their machine name specified as they rarely use a common kernel.
+### Installing kernel headers and build tools
 
-On **Ubuntu** this is done with:
+You'll need the kernel headers for your currently running kernel and build
+tools (`make` and the compiler) on your system first.
 
-	# apt-get install linux-headers-generic build-essential
+If you have built your currently-running kernel from source, you can skip
+this.
 
-Substitute `generic` with the series of kernel you are using.  Normally this is `generic`, sometimes this is `generic-lts-wily` (if you use a backported kernel from Wily), or `lowlatency`.
+* On **Debian** this is done with:
 
-### Cloning the repository ###
+  ```sh
+  apt install linux-header-amd64 build-essential
+  ```
+
+  Substitute `amd64` for your kernel's architecture.  This could be
+  something like `i686` or `ppc`.  ARM systems typically have their machine
+  name specified as they rarely use a common kernel.
+
+* [On **Raspbian** / **Raspberry PI OS**, see their instructions for
+  installing kernel headers][rpi].
+
+  Then install build tools with:
+
+  ```sh
+  apt install build-essential
+  ```
+
+* On **Ubuntu** this is done with:
+
+  ```sh
+  apt install linux-headers-generic build-essential
+  ```
+
+  Substitute `generic` with the series of kernel you are using.  Normally
+  this is `generic`, sometimes this is `generic-lts-wily` (if you use a
+  backported kernel from Wily), or `lowlatency`.
+
+[rpi]: https://www.raspberrypi.com/documentation/computers/linux_kernel.html#kernel-headers
+
+### Cloning the repository
 
 Then clone the git repository into `/usr/src`:
 
