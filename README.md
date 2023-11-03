@@ -55,7 +55,7 @@ this.
 * On **Debian** this is done with:
 
   ```sh
-  apt install linux-header-amd64 build-essential
+  apt install linux-headers-amd64 build-essential
   ```
 
   Substitute `amd64` for your kernel's architecture.  This could be
